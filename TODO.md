@@ -1,16 +1,17 @@
 # TODO
 
-## P0 - Training Completion And Model Test
+## P0 - 训练完成后的模型测试
 
-- [ ] Let the current server training finish without `--use-all-data`.
-- [ ] Locate the produced weights:
+- [ ] 等当前服务器训练完成。正常训练不要使用 `--use-all-data`，保留 `valid/test` 用来评估模型。
+
+- [ ] 找到训练产物：
 
 ```bash
 find runs -path "*/weights/best.pt" -print
 find runs -path "*/results.csv" -print
 ```
 
-- [ ] Run validation on the held-out validation split:
+- [ ] 在验证集上跑指标：
 
 ```bash
 yolo val \
@@ -21,7 +22,7 @@ yolo val \
   split=val
 ```
 
-- [ ] Run validation on the held-out test split:
+- [ ] 在测试集上跑指标：
 
 ```bash
 yolo val \
@@ -32,7 +33,7 @@ yolo val \
   split=test
 ```
 
-- [ ] Run visual prediction on test images, first enemy-only:
+- [ ] 跑 enemy-only 可视化预测：
 
 ```bash
 python predict.py \
@@ -43,7 +44,7 @@ python predict.py \
   --exist-ok
 ```
 
-- [ ] Run visual prediction with ally boxes included for manual confusion checks:
+- [ ] 跑 ally/enemy 双类别可视化预测，用来人工检查混淆：
 
 ```bash
 python predict.py \
@@ -55,36 +56,39 @@ python predict.py \
   --exist-ok
 ```
 
-- [ ] Inspect these output files from the training run:
+- [ ] 检查训练输出文件：
   - `results.png`
   - `confusion_matrix.png`
   - `PR_curve.png`
   - `F1_curve.png`
   - `weights/best.pt`
 
-- [ ] Acceptance criteria for the first runtime candidate:
-  - Enemy precision is high enough that ally-to-enemy mistakes are rare.
-  - Enemy recall is high enough that normal visible enemies are not frequently missed.
-  - `confusion_matrix.png` does not show serious `ally -> enemy` confusion.
-  - Manual prediction images do not show obvious map/building false positives as `enemy`.
+- [ ] 首个 runtime 候选模型的验收标准：
+  - `Enemy` precision 足够高，`ally -> enemy` 错误很少。
+  - `Enemy` recall 足够高，正常可见敌人不会频繁漏检。
+  - `confusion_matrix.png` 没有严重的 `ally -> enemy` 混淆。
+  - 可视化预测中没有明显建筑、地图物体被识别成 `enemy`。
 
-- [ ] Copy the accepted model to the standard path:
+- [ ] 接受模型后复制到标准路径：
 
 ```bash
 mkdir -p models
 cp <BEST_PT> models/best.pt
 ```
 
-- [ ] Commit only code/config/docs changes. Do not commit `datasets/`, `runs/`, or `models/*.pt`.
+- [ ] 只提交代码、配置和文档。不要提交：
+  - `datasets/`
+  - `runs/`
+  - `models/*.pt`
 
-## P1 - Runtime MVP
+## P1 - 实时 Runtime MVP
 
-- [ ] Add runtime dependencies back only where needed:
-  - `dxcam` for screen capture on Windows.
-  - `pywin32` for `SendInput` mouse movement.
-  - `pynput` only if needed for X2 hotkey listening.
+- [ ] 只按需要加回 runtime 依赖：
+  - `dxcam`：Windows 屏幕捕获。
+  - `pywin32`：`SendInput` 鼠标移动。
+  - `pynput`：仅在需要监听 X2 热键时加入。
 
-- [ ] Create runtime modules:
+- [ ] 创建 runtime 模块：
   - `src/head_tracker/runtime/config.py`
   - `src/head_tracker/runtime/capture.py`
   - `src/head_tracker/runtime/detector.py`
@@ -92,9 +96,9 @@ cp <BEST_PT> models/best.pt
   - `src/head_tracker/runtime/mouse_mover.py`
   - `src/head_tracker/runtime/main.py`
 
-- [ ] Runtime default behavior:
-  - Load `models/best.pt`.
-  - Capture center region for 2560x1440 monitor:
+- [ ] Runtime 默认行为：
+  - 加载 `models/best.pt`。
+  - 针对 2560x1440 显示器捕获中心区域：
 
 ```yaml
 screen_width: 2560
@@ -103,59 +107,59 @@ fov_width: 1920
 fov_height: 1080
 ```
 
-  - Run YOLO at `imgsz=1280`.
-  - Keep `enemy` detections only.
-  - Ignore `ally` detections for target selection.
-  - Aim at an estimated upper-body point inside the enemy box:
+  - YOLO 推理使用 `imgsz=1280`。
+  - 只保留 `enemy` 检测框。
+  - `ally` 不进入目标选择。
+  - 在 enemy 整体框内估算上半身/头部附近瞄准点：
 
 ```python
 aim_x = (x1 + x2) * 0.5
 aim_y = y1 + (y2 - y1) * 0.30
 ```
 
-  - Move only while X2 is held.
-  - Stop immediately when X2 is released or no valid target exists.
+  - 仅按住 X2 时移动鼠标。
+  - 松开 X2 或没有有效目标时立即停止移动。
 
-- [ ] Add visual debug mode:
-  - Draw capture region.
-  - Draw ally/enemy boxes when enabled.
-  - Draw selected enemy and aim point.
-  - Print FPS and per-stage latency.
+- [ ] 添加调试可视化：
+  - 绘制捕获区域。
+  - 可选绘制 ally/enemy 框。
+  - 绘制当前选中的 enemy 和瞄准点。
+  - 打印 FPS 和各阶段延迟。
 
-## P2 - Runtime Stability And False-Lock Protection
+## P2 - Runtime 稳定性和防误锁
 
-- [ ] Add target selection guards:
-  - Minimum enemy confidence, start around `0.55`.
-  - Maximum acquisition distance from crosshair.
-  - Box size sanity checks.
-  - Optional aspect-ratio sanity checks.
-  - Prefer target closest to crosshair.
-  - Keep current target unless another enemy is clearly better.
+- [ ] 添加目标选择保护：
+  - enemy 最低置信度，初始建议 `0.55`。
+  - 最大吸附距离，避免准星附近没有敌人时大幅拉向远处误检。
+  - 检测框尺寸合理性检查。
+  - 可选检测框宽高比检查。
+  - 优先选择离准星最近的 enemy。
+  - 当前目标保持锁定，除非另一个 enemy 明显更优。
 
-- [ ] Add temporal confirmation:
-  - Require a fresh target to appear for 2 consecutive frames before moving.
-  - Keep a locked target through short one-frame misses.
-  - Drop target quickly after sustained misses.
+- [ ] 添加时间确认机制：
+  - 新目标需要连续出现 2 帧才开始移动。
+  - 当前锁定目标允许短暂 1 帧漏检。
+  - 持续漏检后快速丢弃目标。
 
-- [ ] Add motion smoothing:
-  - Kalman or One Euro filter for selected target point.
-  - Configurable lead time for moving targets.
-  - Direction-reversal braking to reduce overrun.
-  - Deadzone near crosshair to reduce micro jitter.
+- [ ] 添加运动平滑：
+  - 对选中的目标点使用 Kalman 或 One Euro filter。
+  - 移动目标支持可配置 lead time。
+  - 方向反转时立即制动，减少过冲。
+  - 准星附近加 deadzone，减少 1-2 像素微抖。
 
-- [ ] Add runtime logs:
+- [ ] 添加 runtime 日志：
   - `runs/runtime/latency.csv`
-  - selected target confidence/class/box
-  - capture/inference/postprocess/mouse timing
+  - 当前目标置信度、类别、框坐标
+  - capture / inference / postprocess / mouse 各阶段耗时
 
-- [ ] Add offline replay test mode:
-  - Run detector and selector on saved images/video.
-  - Save annotated output.
-  - Do not move the mouse in replay mode.
+- [ ] 添加离线 replay 测试模式：
+  - 在保存的图片或视频上跑 detector 和 selector。
+  - 保存带框输出。
+  - replay 模式绝不移动鼠标。
 
-## P3 - Deferred / Do Not Implement Now
+## P3 - 暂缓 / 现在不实现
 
-- [ ] Do not implement hidden input backends.
-- [ ] Do not implement anti-cheat bypass features.
-- [ ] Do not optimize TensorRT/ONNX until PyTorch runtime quality is accepted.
-- [ ] Do not build multi-model ensembles until YOLO11s is measured and accepted/rejected.
+- [ ] 不实现隐藏输入后端。
+- [ ] 不实现反检测或绕过类功能。
+- [ ] 在 PyTorch runtime 效果验收前，不做 TensorRT/ONNX 优化。
+- [ ] 在 YOLO11s 实测并接受/拒绝前，不做多模型 ensemble。
