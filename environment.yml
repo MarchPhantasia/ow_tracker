@@ -1,0 +1,15 @@
+name: head_tracker
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+      # Install torch separately so the CUDA wheel matches the server/GPU:
+      #   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+      - ultralytics>=8.3.0
+      - opencv-python>=4.9.0
+      - numpy>=1.26
+      - pyyaml>=6.0
+      - python-dotenv>=1.0
+      - pytest>=8.0

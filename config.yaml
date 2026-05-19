@@ -1,0 +1,29 @@
+dataset:
+  data: "datasets/data.yaml"
+  names: ["ally", "enemy"]
+  enemy_class: "enemy"
+
+training:
+  model: "yolo11s.pt"
+  imgsz: 1280
+  epochs: 200
+  batch: 16
+  device: "0"
+  workers: 8
+  project: "runs/train"
+  name: "ally_enemy"
+  cache: "False"
+  patience: 50
+  copy_best: "auto"
+  copy_best_to: "models/best.pt"
+
+inference:
+  weights: "models/best.pt"
+  source: "datasets/test/images"
+  imgsz: 1280
+  conf: 0.45
+  iou: 0.50
+  device: "0"
+  include_ally: false
+  project: "runs/predict"
+  name: "enemy"

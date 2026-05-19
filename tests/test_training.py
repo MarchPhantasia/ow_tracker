@@ -1,0 +1,24 @@
+from __future__ import annotations
+
+from pathlib import Path
+from uuid import uuid4
+
+from src.head_tracker.training import recommend_epoch
+
+
+def test_recommend_epoch_picks_highest_metric():
+    root = Path("tmp") / "test-artifacts" / uuid4().hex
+    root.mkdir(parents=True)
+    results = root / "results.csv"
+    results.write_text(
+        "epoch, metrics/mAP50-95(B)\n"
+        "1,0.10\n"
+        "2,0.30\n"
+        "3,0.20\n",
+        encoding="utf-8",
+    )
+
+    rec = recommend_epoch(results)
+
+    assert rec.epoch == 2
+    assert rec.value == 0.30
