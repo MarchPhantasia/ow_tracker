@@ -45,30 +45,34 @@ This prints image counts, label counts, empty labels, invalid labels, and class 
 
 ## Train
 
-Diagnostic training with a validation split:
+Train the first official YOLO11s model while keeping `valid` and `test` as held-out evaluation splits:
 
 ```powershell
-python train/train.py --data datasets/data.yaml --model yolo11s.pt --imgsz 1280 --batch 16 --epochs 200 --device 0 --name ally_enemy_diag --workers 8
+python train/train.py --data datasets/data.yaml --model yolo11s.pt --imgsz 1280 --batch 32 --epochs 200 --device 0 --name ally_enemy_s --workers 8 --copy-best always
 ```
-
-Recommend the best final epoch from a diagnostic run:
-
-```powershell
-python train/train.py --recommend-epoch-from runs/train/ally_enemy_diag/results.csv --select-metric "metrics/mAP50-95(B)"
-```
-
-Final full-data training after choosing an epoch:
-
-```powershell
-python train/train.py --data datasets/data.yaml --model yolo11s.pt --imgsz 1280 --batch 16 --epochs <EPOCH> --device 0 --name ally_enemy_final --workers 8 --use-all-data --copy-best always
-```
-
-The final command copies the best weight to `models/best.pt`.
 
 If training stops at `AMP: running Automatic Mixed Precision (AMP) checks...` for several minutes, disable Ultralytics AMP checks and mixed precision:
 
 ```powershell
 python train/train.py --data datasets/data.yaml --model yolo11s.pt --imgsz 1280 --batch 32 --epochs 200 --device 0 --name ally_enemy_s --workers 8 --copy-best always --amp false
+```
+
+The final command copies the best validation weight to `models/best.pt`.
+
+Do not use `--use-all-data` for the normal run. This dataset is large enough to keep validation/test splits for model selection.
+
+## Test A Trained Model
+
+Evaluate on the test split:
+
+```powershell
+yolo val model=models/best.pt data=runs/datasets/ally_enemy_s/data.yaml imgsz=1280 device=0 split=test
+```
+
+Run enemy-only visual prediction:
+
+```powershell
+python predict.py --weights models/best.pt --source datasets/test/images --device 0 --name enemy_test --exist-ok
 ```
 
 ## Predict
