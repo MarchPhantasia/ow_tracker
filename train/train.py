@@ -13,6 +13,34 @@ from src.head_tracker.dataset import prepare_yolo_data
 from src.head_tracker.training import copy_best_weight, recommend_epoch
 
 
+def parse_bool(value: str | bool) -> bool:
+    if isinstance(value, bool):
+        return value
+    normalized = value.strip().lower()
+    if normalized in {"1", "true", "yes", "y", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "n", "off"}:
+        return False
+    raise argparse.ArgumentTypeError(f"expected true/false, got {value!r}")
+
+
+def build_train_kwargs(args: argparse.Namespace, data_yaml: str | Path) -> dict[str, object]:
+    return {
+        "data": str(data_yaml),
+        "imgsz": args.imgsz,
+        "epochs": args.epochs,
+        "batch": args.batch,
+        "device": args.device,
+        "workers": args.workers,
+        "project": args.project,
+        "name": args.name,
+        "cache": args.cache,
+        "patience": 0 if args.use_all_data else args.patience,
+        "exist_ok": args.exist_ok,
+        "amp": parse_bool(args.amp),
+    }
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train the ally/enemy YOLO detector.")
     parser.add_argument("--data", default="datasets/data.yaml")
@@ -25,6 +53,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--project", default="runs/train")
     parser.add_argument("--name", default="ally_enemy")
     parser.add_argument("--cache", default="False")
+    parser.add_argument("--amp", type=parse_bool, default=True)
     parser.add_argument("--patience", type=int, default=50)
     parser.add_argument("--exist-ok", action="store_true")
     parser.add_argument("--use-all-data", action="store_true")
@@ -67,19 +96,7 @@ def main() -> int:
         )
 
     model = YOLO(args.model)
-    results = model.train(
-        data=str(prepared.data_yaml),
-        imgsz=args.imgsz,
-        epochs=args.epochs,
-        batch=args.batch,
-        device=args.device,
-        workers=args.workers,
-        project=args.project,
-        name=args.name,
-        cache=args.cache,
-        patience=0 if args.use_all_data else args.patience,
-        exist_ok=args.exist_ok,
-    )
+    results = model.train(**build_train_kwargs(args, prepared.data_yaml))
 
     run_dir = Path(getattr(results, "save_dir", Path(args.project) / args.name))
     copy_policy = args.copy_best

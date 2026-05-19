@@ -65,6 +65,12 @@ python train/train.py --data datasets/data.yaml --model yolo11s.pt --imgsz 1280 
 
 The final command copies the best weight to `models/best.pt`.
 
+If training stops at `AMP: running Automatic Mixed Precision (AMP) checks...` for several minutes, disable Ultralytics AMP checks and mixed precision:
+
+```powershell
+python train/train.py --data datasets/data.yaml --model yolo11s.pt --imgsz 1280 --batch 32 --epochs 200 --device 0 --name ally_enemy_s --workers 8 --copy-best always --amp false
+```
+
 ## Predict
 
 Enemy-only prediction on the test set:
