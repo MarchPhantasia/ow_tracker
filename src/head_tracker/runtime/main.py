@@ -37,7 +37,8 @@ def main() -> int:
     mover = RelativeMouseMover(cfg.mouse)
     mouse = None if args.no_mouse else SendInputMouse()
     hotkey = X2Hotkey(cfg.hotkey.button)
-    crosshair = (cfg.capture.fov_width * 0.5, cfg.capture.fov_height * 0.5)
+    region_width, region_height = cfg.capture.region_size
+    crosshair = (region_width * 0.5, region_height * 0.5)
     frame_idx = 0
     last = perf_counter()
 

@@ -50,10 +50,10 @@ class TargetSelector:
                 self._lost_frames = 0
                 self._candidate = None
                 self._candidate_frames = 0
-                closest = min(valid, key=lambda d: _distance(d.center, crosshair))
+                closest = min(valid, key=lambda d: _distance(self._target_point(d), crosshair))
                 if closest is not associated:
-                    associated_dist = _distance(associated.center, crosshair)
-                    closest_dist = _distance(closest.center, crosshair)
+                    associated_dist = _distance(self._target_point(associated), crosshair)
+                    closest_dist = _distance(self._target_point(closest), crosshair)
                     if closest_dist < associated_dist - self._cfg.switch_margin_px:
                         self._locked = closest
                         return self._selected(closest)
@@ -65,8 +65,8 @@ class TargetSelector:
             self._candidate_frames = 0
             return None
 
-        candidate = min(valid, key=lambda d: _distance(d.center, crosshair))
-        if _distance(candidate.center, crosshair) > self._cfg.max_acquisition_distance_px:
+        candidate = min(valid, key=lambda d: _distance(self._target_point(d), crosshair))
+        if _distance(self._target_point(candidate), crosshair) > self._cfg.max_acquisition_distance_px:
             self._candidate = None
             self._candidate_frames = 0
             return None
@@ -107,8 +107,11 @@ class TargetSelector:
     def _selected(self, detection: Detection) -> SelectedTarget:
         return SelectedTarget(
             detection=detection,
-            aim_point=aim_point(detection, self._cfg.aim_y_ratio),
+            aim_point=self._target_point(detection),
         )
+
+    def _target_point(self, detection: Detection) -> Point:
+        return aim_point(detection, self._cfg.aim_y_ratio)
 
 
 def _distance(a: Point, b: Point) -> float:
