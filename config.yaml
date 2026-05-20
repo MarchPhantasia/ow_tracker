@@ -32,7 +32,7 @@ runtime:
   inference:
     weights: "models/best.pt"
     imgsz: 960
-    conf: 0.50
+    conf: 0.40
     iou: 0.50
     device: "0"
     half: true
