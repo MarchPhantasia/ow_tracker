@@ -77,3 +77,17 @@ def test_selector_stays_sticky_unless_new_target_is_clearly_better():
     assert still_locked.detection.center == (334.0, 160.0)
     assert switched is not None
     assert switched.detection.center == (150.0, 160.0)
+
+
+def test_selector_acquires_by_aim_point_not_box_center():
+    selector = TargetSelector(
+        SelectionConfig(confirm_frames=1, aim_y_ratio=0.0, max_acquisition_distance_px=40),
+    )
+    crosshair = (120.0, 120.0)
+    # center is far from crosshair, but aim point (top-center) is close enough
+    target = det("enemy", 100, 100, 140, 300)
+
+    selected = selector.update([target], crosshair)
+
+    assert selected is not None
+    assert selected.aim_point == (120.0, 100.0)

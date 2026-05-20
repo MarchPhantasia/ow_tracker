@@ -22,9 +22,16 @@ class CaptureConfig:
 
     @property
     def region(self) -> tuple[int, int, int, int]:
-        left = max(0, (self.screen_width - self.fov_width) // 2)
-        top = max(0, (self.screen_height - self.fov_height) // 2)
-        return (left, top, left + self.fov_width, top + self.fov_height)
+        width = max(1, min(self.fov_width, self.screen_width))
+        height = max(1, min(self.fov_height, self.screen_height))
+        left = max(0, (self.screen_width - width) // 2)
+        top = max(0, (self.screen_height - height) // 2)
+        return (left, top, left + width, top + height)
+
+    @property
+    def region_size(self) -> tuple[int, int]:
+        left, top, right, bottom = self.region
+        return (right - left, bottom - top)
 
 
 @dataclass(frozen=True)
