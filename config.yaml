@@ -32,7 +32,7 @@ runtime:
   inference:
     weights: "models/best.pt"
     imgsz: 960
-    conf: 0.55
+    conf: 0.50
     iou: 0.50
     device: "0"
     half: true
@@ -46,30 +46,30 @@ runtime:
   selection:
     enemy_class: "enemy"
     aim_y_ratio: 0.30
-    min_confidence: 0.55
-    max_acquisition_distance_px: 320
+    min_confidence: 0.40
+    max_acquisition_distance_px: 360
     min_box_area_px: 24
     min_aspect_ratio: 0.15
     max_aspect_ratio: 1.60
     confirm_frames: 2
-    max_lost_frames: 2
-    association_radius_px: 120
-    switch_margin_px: 40
+    max_lost_frames: 3
+    association_radius_px: 180
+    switch_margin_px: 70
   filter:
     enabled: true
-    process_noise: 1.0
-    measurement_noise: 1.0
+    process_noise: 0.8
+    measurement_noise: 2.5
     max_velocity_px_per_s: 3000
-    lead_time_ms: 20
+    lead_time_ms: 26
   mouse:
-    smoothing: 0.85
-    sensitivity_scale: 2.5
-    max_step_px: 180
-    max_accel_input_px_per_sec: 4200
-    deadzone_px: 3.0
+    smoothing: 0.94
+    sensitivity_scale: 2.2
+    max_step_px: 280
+    max_accel_input_px_per_sec: 7600
+    deadzone_px: 5.0
   hotkey:
     button: "x2"
   debug:
-    enable_visualizer: true
+    enable_visualizer: false
     latency_csv: "runs/runtime/latency.csv"
     log_every_n_frames: 30
