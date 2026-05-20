@@ -136,13 +136,85 @@ runs/predict/
 - 训练结果权重复制
 - 离线图片/目录/视频推理
 - enemy-only 推理过滤
+- 离线 runtime replay
+- 实时屏幕捕获 runtime
+- enemy-only 目标选择
+- X2 按住移动鼠标
+- Kalman 目标点预测
+- 防误锁和短暂漏检保持
+- latency CSV 日志
 
-还没有完成：
+## 离线 Runtime Replay
 
-- 实时屏幕捕获
-- 游戏内实时 YOLO 推理循环
-- X2 热键
-- 鼠标移动
-- 目标选择、追踪和平滑
+这个模式会跑完整的 runtime 目标选择和瞄准点逻辑，但不会移动鼠标。建议每次换模型后先跑它。
+
+```powershell
+python -m src.head_tracker.runtime.replay --config config.yaml --source datasets/test/images --output runs/replay/test --limit 100
+```
+
+输出目录：
+
+```text
+runs/replay/test
+```
+
+重点检查：
+
+- 是否只选 enemy。
+- ally 是否没有进入目标选择。
+- 黄色十字是否落在 enemy 框上半身附近。
+- 多个 enemy 时是否优先选择离准星最近的目标。
+
+## 实时 Runtime
+
+Windows 本机先安装实时依赖：
+
+```powershell
+pip install -r requirements-runtime-windows.txt
+```
+
+先只开检测和 debug 窗口，不移动鼠标：
+
+```powershell
+python -m src.head_tracker.runtime.main --config config.yaml --no-mouse
+```
+
+确认框、目标选择和延迟正常后，再允许鼠标移动：
+
+```powershell
+python -m src.head_tracker.runtime.main --config config.yaml
+```
+
+默认行为：
+
+- 捕获 2560x1440 屏幕中心 1920x1080 区域。
+- YOLO 使用 `imgsz=960`、`conf=0.55`。
+- 只保留 `enemy`。
+- 新目标需要连续出现 2 帧才会锁定。
+- 按住 X2 才移动鼠标。
+- 松开 X2 或丢失目标会立即停止/重置鼠标输出。
+- 延迟日志写入 `runs/runtime/latency.csv`。
+
+如果误锁 ally 或建筑：
+
+- 提高 `runtime.selection.min_confidence` 到 `0.60` 或 `0.65`。
+- 降低 `runtime.selection.max_acquisition_distance_px`。
+- 用 replay 输出图确认误检来源。
+
+如果追不上目标：
+
+- 先把 `runtime.inference.imgsz` 从 `960` 调到 `1280` 看精度是否改善。
+- 或把 `runtime.filter.lead_time_ms` 从 `20` 小幅调到 `30`。
+
+如果过冲：
+
+- 先把 `runtime.filter.lead_time_ms` 降到 `10`。
+- 或把 `runtime.mouse.sensitivity_scale` 调大。
+
+暂时没有完成：
+
+- TensorRT/ONNX 加速。
+- 多模型 ensemble。
+- 任何隐藏输入或绕过类功能。
 
 后续任务见 `TODO.md`。

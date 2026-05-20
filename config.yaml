@@ -27,3 +27,49 @@ inference:
   include_ally: false
   project: "runs/predict"
   name: "enemy"
+
+runtime:
+  inference:
+    weights: "models/best.pt"
+    imgsz: 960
+    conf: 0.55
+    iou: 0.50
+    device: "0"
+    half: true
+  capture:
+    backend: "dxcam"
+    screen_width: 2560
+    screen_height: 1440
+    fov_width: 1920
+    fov_height: 1080
+    target_fps: 120
+  selection:
+    enemy_class: "enemy"
+    aim_y_ratio: 0.30
+    min_confidence: 0.55
+    max_acquisition_distance_px: 320
+    min_box_area_px: 24
+    min_aspect_ratio: 0.15
+    max_aspect_ratio: 1.60
+    confirm_frames: 2
+    max_lost_frames: 2
+    association_radius_px: 120
+    switch_margin_px: 40
+  filter:
+    enabled: true
+    process_noise: 1.0
+    measurement_noise: 1.0
+    max_velocity_px_per_s: 3000
+    lead_time_ms: 20
+  mouse:
+    smoothing: 0.85
+    sensitivity_scale: 2.5
+    max_step_px: 180
+    max_accel_input_px_per_sec: 4200
+    deadzone_px: 3.0
+  hotkey:
+    button: "x2"
+  debug:
+    enable_visualizer: true
+    latency_csv: "runs/runtime/latency.csv"
+    log_every_n_frames: 30

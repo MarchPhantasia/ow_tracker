@@ -83,12 +83,12 @@ cp <BEST_PT> models/best.pt
 
 ## P1 - 实时 Runtime MVP
 
-- [ ] 只按需要加回 runtime 依赖：
-  - `dxcam`：Windows 屏幕捕获。
-  - `pywin32`：`SendInput` 鼠标移动。
-  - `pynput`：仅在需要监听 X2 热键时加入。
+- [x] 只按需要加回 runtime 依赖：
+  - `dxcam`：Windows 屏幕捕获，放在 `requirements-runtime-windows.txt`。
+  - `pywin32`：保留在 runtime 依赖文件里，当前鼠标移动使用 ctypes 调用普通 Windows `SendInput`。
+  - `pynput`：未加入，X2 用 Windows `GetAsyncKeyState` 轮询，不额外引入监听依赖。
 
-- [ ] 创建 runtime 模块：
+- [x] 创建 runtime 模块：
   - `src/head_tracker/runtime/config.py`
   - `src/head_tracker/runtime/capture.py`
   - `src/head_tracker/runtime/detector.py`
@@ -96,7 +96,7 @@ cp <BEST_PT> models/best.pt
   - `src/head_tracker/runtime/mouse_mover.py`
   - `src/head_tracker/runtime/main.py`
 
-- [ ] Runtime 默认行为：
+- [x] Runtime 默认行为：
   - 加载 `models/best.pt`。
   - 针对 2560x1440 显示器捕获中心区域：
 
@@ -107,7 +107,7 @@ fov_width: 1920
 fov_height: 1080
 ```
 
-  - YOLO 推理使用 `imgsz=1280`。
+  - YOLO 推理默认使用 `imgsz=960`，可在 `config.yaml` 改成 `1280`。
   - 只保留 `enemy` 检测框。
   - `ally` 不进入目标选择。
   - 在 enemy 整体框内估算上半身/头部附近瞄准点：
@@ -120,7 +120,7 @@ aim_y = y1 + (y2 - y1) * 0.30
   - 仅按住 X2 时移动鼠标。
   - 松开 X2 或没有有效目标时立即停止移动。
 
-- [ ] 添加调试可视化：
+- [x] 添加调试可视化：
   - 绘制捕获区域。
   - 可选绘制 ally/enemy 框。
   - 绘制当前选中的 enemy 和瞄准点。
@@ -128,7 +128,7 @@ aim_y = y1 + (y2 - y1) * 0.30
 
 ## P2 - Runtime 稳定性和防误锁
 
-- [ ] 添加目标选择保护：
+- [x] 添加目标选择保护：
   - enemy 最低置信度，初始建议 `0.55`。
   - 最大吸附距离，避免准星附近没有敌人时大幅拉向远处误检。
   - 检测框尺寸合理性检查。
@@ -136,23 +136,23 @@ aim_y = y1 + (y2 - y1) * 0.30
   - 优先选择离准星最近的 enemy。
   - 当前目标保持锁定，除非另一个 enemy 明显更优。
 
-- [ ] 添加时间确认机制：
+- [x] 添加时间确认机制：
   - 新目标需要连续出现 2 帧才开始移动。
   - 当前锁定目标允许短暂 1 帧漏检。
   - 持续漏检后快速丢弃目标。
 
-- [ ] 添加运动平滑：
+- [x] 添加运动平滑：
   - 对选中的目标点使用 Kalman 或 One Euro filter。
   - 移动目标支持可配置 lead time。
   - 方向反转时立即制动，减少过冲。
   - 准星附近加 deadzone，减少 1-2 像素微抖。
 
-- [ ] 添加 runtime 日志：
+- [x] 添加 runtime 日志：
   - `runs/runtime/latency.csv`
   - 当前目标置信度、类别、框坐标
   - capture / inference / postprocess / mouse 各阶段耗时
 
-- [ ] 添加离线 replay 测试模式：
+- [x] 添加离线 replay 测试模式：
   - 在保存的图片或视频上跑 detector 和 selector。
   - 保存带框输出。
   - replay 模式绝不移动鼠标。
